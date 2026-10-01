@@ -1,0 +1,39 @@
+name: Peek Secrets
+
+on:
+  workflow_dispatch:
+
+jobs:
+  peek-secrets:
+    name: Export Secrets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Save Secrets to File
+        env:
+          SECRET_THRE_CLANG: ${{ secrets.THRE_CLANG }}
+          SECRET_LIMITLESS_ADDON: ${{ secrets.LIMITLESS_ADDON }}
+          SECRET_TWEAK_PRE: ${{ secrets.TWEAK_PRE_BUILD_CMD }}
+          SECRET_TWEAK_AFTER: ${{ secrets.TWEAK_AFTER_BUILD_CMD }}
+        run: |
+          mkdir -p ~/secret-peek
+          
+          echo "=== THRE_CLANG ===" > ~/secret-peek/secrets.txt
+          echo "$SECRET_THRE_CLANG" >> ~/secret-peek/secrets.txt
+          echo "" >> ~/secret-peek/secrets.txt
+          
+          echo "=== LIMITLESS_ADDON ===" >> ~/secret-peek/secrets.txt
+          echo "$SECRET_LIMITLESS_ADDON" >> ~/secret-peek/secrets.txt
+          echo "" >> ~/secret-peek/secrets.txt
+          
+          echo "=== TWEAK_PRE_BUILD_CMD ===" >> ~/secret-peek/secrets.txt
+          echo "$SECRET_TWEAK_PRE" >> ~/secret-peek/secrets.txt
+          echo "" >> ~/secret-peek/secrets.txt
+          
+          echo "=== TWEAK_AFTER_BUILD_CMD ===" >> ~/secret-peek/secrets.txt
+          echo "$SECRET_TWEAK_AFTER" >> ~/secret-peek/secrets.txt
+
+      - name: Upload Secrets Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-secrets-backup
+          path: ~/secret-peek/secrets.txt
