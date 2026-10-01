@@ -23,11 +23,11 @@ on:
       ksu_url:
         description: 'KernelSU | false for disable'
         required: false
-        default: 'curl -LSs https://raw.githubusercontent.com/ThRE-Team/KernelSU-Next/main/kernel/setup.sh | bash -s v3.2.0'
+        default: 'curl -LSs https://raw.githubusercontent.com/ThRE-Team/KernelSU-Next/main/kernel/setup.sh | bash -s v3.4.0'
       clang_url:
         description: 'Clang | false for disable'
         required: false
-        default: 'https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/9b144befdfd93b90e02c663504fb9f4b95f9faf8/clang-r596125.tar.gz'
+        default: 'https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r530567.tar.gz'
       tweak_pre_build_cmd:
         description: 'Tweak Pre Build'
         required: false
