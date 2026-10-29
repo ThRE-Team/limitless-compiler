@@ -1,4 +1,4 @@
-name: Limitless Compiler v2.3
+name: Limitless Compiler v2.2.1
 # linex Project
 
 on:
@@ -15,7 +15,7 @@ on:
       kernel_branch:
         description: 'Kernel Branch'
         required: true
-        default: 'lineage-22.2-next'
+        default: 'lineage-22.2-ksu'
       defconfig:
         description: 'defconfig'
         required: true
@@ -23,11 +23,11 @@ on:
       ksu_url:
         description: 'KernelSU | false for disable'
         required: false
-        default: 'curl -LSs https://raw.githubusercontent.com/ThRE-Team/KernelSU-Next/main/kernel/setup.sh | bash -s v3.4.0'
+        default: 'curl -LSs https://raw.githubusercontent.com/ThRE-Team/KernelSU-Next/next/kernel/setup.sh | bash -s v3.4.2-Rise'
       clang_url:
         description: 'Clang | false for disable'
         required: false
-        default: 'https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r530567.tar.gz'
+        default: 'https://github.com/ThRE-Team/direct/releases/download/clang-r614150/clang-r614150.tar.gz'
       tweak_pre_build_cmd:
         description: 'Tweak Pre Build'
         required: false
@@ -38,13 +38,24 @@ on:
         default: 'echo "Compilation completed! $(date)"'
 
 jobs:
-  prepare-tool:
-    name: 1. Prepare Tools & Dependencies
+  limitless-compiler:
+    name: ${{ github.event.inputs.zip_name }}
     runs-on: ubuntu-latest
     steps:
-      - name: Check Input & Install Dependencies
+      - name: Check Input
         run: |
           sudo timedatectl set-timezone Asia/Jakarta
+          echo "zip_name: ${{ github.event.inputs.zip_name }}"
+          echo "kernel_source: ${{ github.event.inputs.kernel_source }}"
+          echo "kernel_branch: ${{ github.event.inputs.kernel_branch }}"
+          echo "defconfig: ${{ github.event.inputs.defconfig }}"
+          echo "ksu_url: ${{ github.event.inputs.ksu_url }}"
+          echo "clang_url: ${{ github.event.inputs.clang_url }}"
+          echo "tweak_pre_build_cmd: ${{ github.event.inputs.tweak_pre_build_cmd }}"
+          echo "tweak_after_build_cmd: ${{ github.event.inputs.tweak_after_build_cmd }}"
+          
+      - name: Install Build Dependencies
+        run: |
           sudo apt-get update
           sudo apt-get install -y \
             bc build-essential flex bison ca-certificates clang lld llvm \
@@ -68,24 +79,6 @@ jobs:
           else
             echo "Menggunakan Clang bawaan sistem Ubuntu..."
           fi
-
-      - name: Save Clang Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: clang-toolchain
-          path: ~/clang-ext/
-          retention-days: 1
-
-  clone-and-compile:
-    name: 2. Clone Source & Compile Kernel
-    needs: prepare-tool
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download Clang Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: clang-toolchain
-          path: ~/clang-ext/
 
       - name: Clone Kernel Source
         run: |
@@ -135,45 +128,23 @@ jobs:
           make "${MAKE_ARGS[@]}" ${{ github.event.inputs.defconfig }}
           
           ${{ github.event.inputs.tweak_pre_build_cmd }}
-          ${{ secrets.TWEAK_PRE_BUILD_CMD }}
           
           make "${MAKE_ARGS[@]}" olddefconfig
-          
-          ${{ secrets.LIMITLESS_ADDON }}
           
           make -j$(nproc --all) "${MAKE_ARGS[@]}" KCFLAGS="$K_FLAGS" EXTRA_CFLAGS="$K_FLAGS"
           
           ${{ github.event.inputs.tweak_after_build_cmd }}
-          ${{ secrets.TWEAK_AFTER_BUILD_CMD }}
-
-      - name: Save Build Output Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: kernel-compiled-out
-          path: kernel-src/out/
-          retention-days: 1
-
-  upload:
-    name: 3. Upload Artifact
-    needs: clone-and-compile
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download Build Output Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: kernel-compiled-out
-          path: out/
-
+          
       - name: Upload Image.gz-dtb
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.inputs.zip_name }}-gz-dtb
-          path: out/arch/arm64/boot/Image.gz-dtb
+          path: kernel-src/out/arch/arm64/boot/Image.gz-dtb
           if-no-files-found: ignore
           
       - name: Upload Image Only
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.inputs.zip_name }}-raw
-          path: out/arch/arm64/boot/Image
+          path: kernel-src/out/arch/arm64/boot/Image
           if-no-files-found: ignore
